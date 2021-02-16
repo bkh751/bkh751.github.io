@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "go options function pattern"
+title:  "go optional functions pattern"
 date:   2020-12-29 01:18:45 +0900
 categories: jekyll update
 ---
