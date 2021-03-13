@@ -35,6 +35,15 @@ plugins:
 minima:
   skin: dark
 
+
+# font-awesome
+gems:
+  - jekyll-font-awesome-sass
+
+font-awesome:
+  assets: true
+
+
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
