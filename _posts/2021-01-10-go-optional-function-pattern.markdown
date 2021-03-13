@@ -101,7 +101,7 @@ GoOut()
 다른 옵션을 추가하는 부분도 위에 언급드린 1~3 의 과정을 거치면 쉽게 추가할 수 있습니다.
 
 golang option pattern 관련 글
-- https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
-- https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-- https://www.sohamkamani.com/golang/options-pattern/
+- [https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis)
+- [https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html](https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html)
+- [https://www.sohamkamani.com/golang/options-pattern/](https://www.sohamkamani.com/golang/options-pattern/)
 
