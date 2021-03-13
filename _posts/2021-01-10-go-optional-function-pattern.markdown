@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "go functional options pattern"
+title:  "go functional options pattern🙂"
 date:   2020-12-29 01:18:45 +0900
 categories: golang
 ---
