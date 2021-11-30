@@ -1,4 +1,4 @@
-## Goland Web Project
+## Golan Web Project
 
 ## 스캘래톤 작업
 
