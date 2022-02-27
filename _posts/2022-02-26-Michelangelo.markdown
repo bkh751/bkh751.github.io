@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "Uber Michelangelo "
+categories: mlops
+---
+
 ![https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/Featured-Image-768x329.png](https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/Featured-Image-768x329.png)
 
 우버에서는 ML-as-a-service 플랫폼으로 미켈란젤로를 쓴다. 
