@@ -3,10 +3,9 @@ layout: post
 title:  "Uber Michelangelo "
 categories: mlops
 ---
+원문: [https://eng.uber.com/michelangelo-machine-learning-platform/](https://eng.uber.com/michelangelo-machine-learning-platform/)
 
 ![https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/Featured-Image-768x329.png](https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/Featured-Image-768x329.png)
-
-원문: https://eng.uber.com/michelangelo-machine-learning-platform/
 
 우버에서는 ML-as-a-service 플랫폼으로 미켈란젤로를 쓴다. 
 
@@ -110,22 +109,110 @@ DSL이 모델 설정의 일부가 되도록 하는것이 좋고, 훈련시간과
 
 ****Train models(모델 훈련)****
 
-****Evaluate models****
+미켈란젤로는 오프라인, 분산 트레이닝을 지원한다. 지원되는 훈련의 종류로는 의사결정 트리, 선형과 로지스틱 모델 그리고 비지도 학습모델(예를들면 K-means), 시계열 모델 그리고 딥뉴럴 네트워크가 있다. 분산 모델 훈련의 경우 수십억개의 샘플 훈련에서 부터  작은 데이터셋으로 빠른 이터레이션 훈련까지 가능하다. 
 
-****Model accuracy report****
+모델 설정은 모델 타입, 하이퍼 매개변수, 데이타소스 참조, 피처 DSL , 컴퓨팅 리소스 선언이 있다( 머신의 숫자, 메모리, GPU 사용유무 등). 이러한 설정들은  [YARN](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html) or [Mesos](http://mesos.apache.org/) cluster 상에서 도는 훈련 잡 설정을 구성하는 설정이 된다.
 
-****Decision tree visualization****
+모델 훈련 이후에는, 성능 지표(ROC curve 와  PR curve 가 있다) 가 평가 되고, 모델 측정 리포트에 포함된다. 훈련의 마지막에는, 원본 설정, 학습된 매개변수, 그리고 측정 리포트가 저장되어 모델 저장소에 저장되고 분석과 배포에 사용된다. 
 
-****Feature report****
+단일 모델을 훈련하는것 뿐만아니라, 미켈란젤로는 모든 타입의 모델 타입과 파티션 모델에 대해서 하이퍼 매개변수 탐색을 지원한다. 파티션 모델에 대해서는 , 자동적으로 훈련 데이타를 사용자 설정 기반으로 파티셔닝 하고 각 파티션마다 한 모델씩 훈련을 한다, 그리고 부모 모델로 필요할때마다 fallback (예를들어, 도시 별 모델을 훈련했지만 원하는 정확도를 달성하지 못하는 경우 나라 수준의 모델로 돌아오도록 할 수 있다).
 
-****Deploy models****
+훈련 잡은 UI 와 API 를 통해 관리되고 설정된다, 가끔 주피터 노트북을 통해서 설정되기도한다. 팀에서는 API 를 사용하고, workflow 툴을 사용해서 모델 재훈련 스캐쥴링을 한다.
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image2.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image2.png)
+
+모델 훈련 잡은 피처스토어와 훈련 데이타 저장소 셋을 사용해서 모델을 훈련하고 훈련이 끝나면 모델 저장소에 저장하게된다.
+
+**모델 평가하기**(****Evaluate models)****
+
+모델은 문제를 해결하기위한 최선의 형태가 되기 위해 피처셋,알고리즘, 하이퍼 매개변수를 확인하기 위해 체계적인 탐색과정으로 훈련을 하여 이상적인 모델에 도달하기 위해 수백번의 모델을 훈련을 하게된다. 비록 결국 프로덕션에 쓰이지 않더라고, 이러한 모델들은 엔지니어들로하여금 최고의 성능을 내는 모델 설정을 하게끔 한다. 이러한 훈련된 모델들을 추적하고, 평가하고, 서로 비교를 하는것은 보통 커다란 도전과제로 다가오는데 그 시점이 너무 많은 모델이 있고 여러가지의 값들을 추가할때 이다.
+
+미켈란젤로의 모든 모델에 대해서, 우버는 버저닝이 들어간 오브젝트를 카산드라의 모델 저장소에 저장하는데 아래와 같은 정보를 가진 레코드로 저장하게된다
+
+- 누가 모델을 훈련했나
+- 훈련 잡의 시작과 끝 시간
+- 전체 모델 설정 ( 사용된 피처, 하이퍼 매개변수 등)
+- 훈련과 테스트 데이타 셋 참조값
+- 각 피처의 분포와 상대적 중요도
+- 모델 정확도 메트릭
+- 각 모델 타입에 대한 표준 차트와 그래프 (e.g. ROC curve, PR curve, and confusion matrix for a binary classifier)
+- 학습이 완료된 모델의 매개변수들
+- 모델 시각화를 위한 요약 통계
+
+이러한 정보들은 웹 UI 를 통해 알거나 API 호출로 쉽게 파악이 가능ㅎ라다, 둘다 각 모델을 조사하거나 둘 이상의 모델을 서로 비교하기 위해서도 쓸 수 있다.
+
+****Model accuracy report(모델 정확도 리포트)****
+
+회귀 모델에 대한 모델 정확도 리포트는 표준 정확도 메트릭과 차트를 보여준다.분류 모델은 다른 셋을 보여주는데 아래 사진과 같다.
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image9.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image9.png)
+
+회귀 모델 리포트는 회귀 관련 성능 지표를 보여준다
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image10.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image10.png)
+
+2진 분류 성능 리포트는 분류 관련 성증지표를 보여준다
+
+****Decision tree visualization(의사 결정트리 시각화)****
+
+중요한 모델의 경우에는 복잡한 시각 툴을 써서 모델러들이 모델의 행위를 이해하고, 디버깅 할 수 있도록 한다. 의사 결정 트리 모델의 경우 사용자가 각 개별 트리를 보면서 전체 모델에 대한 상대적 중요성, 분할 지점, 특정 트리에 대한 각 기능의 중요성 및 다른 변수 중에서 각 분할에서의 데이터 분포를 탐색하여 알 수 있게 해준다. 사용자는 피처 값들을 특정할 수 있고 시각화는 의사결정 트리 path 를 묘사 할 수 있도록해준다. 그리고 전체적인 모델 예측을 묘사한다.
+
+![https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image12-2-768x433.png](https://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image12-2-768x433.png)
+
+****Feature report ( 피처 리포트)****
+
+미켈란젤로는 피처 리포트로 각 피처를 정렬해서 중요도를 기반으로 보여준다 . 두가지 피처를 같이 선택하면 피처 상호작용을 two-way partial dependence diagram 으로 볼 수 있다. 
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image11.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image11.png)
+
+피처들을 볼 수 있고, 모델에 가하는 영향도를 알 수 있으며 상호 작용을 피처 리포트를 통해서 탐색해볼 수 있다. 
+
+****Deploy models (모델 배포)****
+
+미켈란젤로는 e2e 배포가 가능한데, UI 나 API 로 할 수 있고 3가지 모드를 지원한다. 
+
+- offline deployment: 모델은 오프라인 컨테이너에 배포되서 스파크 잡을 돌려서 배치 예측값들을 생산 한다. 이러한 작업은 반복 스캐쥴링이나 필요에 따라 요청이 가능하다.
+- online deployment: 온라인 예측 서비스 클러스터에 배포되고 ( 수백대의 머신이 로드밸런서 뒷단에 존재한다) 유저가 서비스에 RPC 호출을 통해 결괏값을 받을 수 있다.
+- library deployment: 서빙 컨테이너에 모델을 수행하도록 하려고하는데 그 컨테이너가 다른 서비스에 라이브러리로 임베딩이 되어 자바 API 로 호출이 되는 경우의 배포. online deployment 와 비슷하다.
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image6.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image6.png)
+
+모든 경우에 대해서 필요한 모델 아티팩트들은 ZIP 파일로 되어있고 연관된 호스트로 복제되어 우버의 데이터 센터를 넘어 코드 배포 인프라로 넘어가게된다.  예측 컨테이너들은 자동적으로 디스크로부터 새로운 모델들을 불러오고 예측 요청을 핸들링하기 시작한다.
+
+많은 팀들이 자동 스크립트로 일반 모델 재훈현과 배포를 미켈란젤로 API 로 작성해뒀다. 우버잇츠의 경우 데싸와 엔지니어를 통해 웹 UI 를 통해 수동트리거를 한다. 
 
 ****Make predictions****
 
-****Referencing models****
+모델이 배포가 되고 서빙 컨테이너로 불러와졌을때, 서빙 컨테이너가 예측을 할때에는 데이타 파이프라인에서 불러온 피처 데이타를 기반으로 예측 하거나 client 서비스로부터 직접 예측한다. 피처 스토어에있는 raw 피처들은 DSL 을 통해 수정되고, 추가 피처를 추가할 수 있다. 마지막 피처 벡터가 만들어지고나면 스코어링을 위해 모델에 전달이 된다. 온라인 모델의 경우에는, 예측값들이 하이프에 쓰여지는데 이 값들은 다운스트림 배치 잡이나 사용자를 통해 SQL 기반 쿼리 툴을 통해 Consume 된다.
 
-****Scale and latency****
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image3.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image3.png)
 
-****Monitor predictions****
+온라인, 오프라인 예측 서비스는 피처 벡터 셋들을 사용해서 예측값들을 생성한다.
 
-****Management plane, API, and web UI****
+****Referencing models (모델 참조하기)****
+
+하나 이상의 모델은 동시에 하나의 서빙 컨테이너에 배포될 수 있다. 이러한 기능은 예전 모델에서 새로운 모델로 교체를 하기 위한 A/B 테스팅이 가능하게끔 해준다. 서빙 중에는 서빙을 위해 배포된 모델은 UUID, 태그(alias) 를 통해 식별된다. 온라인 모델의 경우에는, 클라이언트 서비스가 원하는 모델의 피처 벡터를  모델의 UUID 혹은 모델의 태그를 전달 한다. 태그 참조의 경우에는 배포된 같은 태그를 가진 모델중 가장 최신 모델을 참조하게된다. 배치 모델들의 경우에는, 모든 배포된 모델들은 각 배치 데이타 셋의 score 를 매기기 위해 쓰고 예측 결과 레코드들은 모델 UUID 와 태그를 가지고있어서 consumer 가 적합한 필터를 걸 수 있도록 한다. 
+
+만약 새로운 모델로 옛날 모델을 교체를 하는 경우 두 모델이 같은 시그니쳐를 가지는 경우 (같은 셋의 피처를 가지는 경우) , 사용자는 새로운 모델을 예전 모델과 같은 태그를 부여하게되면 컨테이너는 새로운 모델을 써서 즉시 시작이 된다. 이러한 기능은 사용자가 모델을 클라이언트 코드를 변경하지 않으면서 모델을 업데이트 할 수 있게끔한다. 사용자들은 또한 새로운 모델을 단지 UUID 만 가지고 배포할 수 있으며 이후에는 클라이언트의 설정이나 중간 서비스의 설정을 바꾸어서 점진적으로 예전 모델UUID 에서 새로운 모델 UUID 로 변경하도록 트래픽 스위치를 할 수 있다.
+
+A/B  테스팅의 경우, 사용자들이 경쟁 모델을 UUID 혹은 태그로 배포하고 우버의 experimentation 프레임워크를 사용해서 트래픽 비율을 조정할 수 있고 각 모델의 성능 메트릭을 추적할 수 있다.
+
+****Scale and latency(스케일과 지연)****
+
+머신 러닝 모델이 stateless 하고 어느것도 공유하지 않기 때문에, scale out 은 offline, online 둘 다 쉽다. 온라인 모델의 경우, 호스트를 늘리면 되고 로드 밸런서가 부하를 분산하도록 하면된다. 오프라인 예측의 경우, 스파크 실행기를 더 늘려서  스파크가 직접 병렬처리를 관리하도록 한다. 
+
+****Monitor predictions(모델 예측 모니터링)****
+
+모델이 훈련되고 평가가 될때 과거 데이터가 항상 쓰이게된다. 모델이 미래에도 잘 동작하기 위해서는, 데이터 파이프라인이 계속해서 정확한 데이터를 보내고 모델이 더 이상 정확하지 않은지 확인하기 위해 예측을 모니터링하는 것이 중요하다.
+
+이 문제를 해결하기 위해 미켈란젤로는 자동으로 예측의 일정 비율을 기록하고 선택적으로 보류할 수 있고 이후에 보류했던 예측 값들을 데이터 파이프라인을 통해 생성된 예측된 결과 값(혹은 라벨)에 조인할 수 있게한다. 이러한 정보들을 가지고 실시간으로 모델 정확도 측정 값들을 생성 할 수 있다, 이러한 측정값들은 R-squared/[coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination), [root mean square logarithmic error](https://www.kaggle.com/wiki/RootMeanSquaredLogarithmicError) (RMSLE), [root mean square error](https://en.wikipedia.org/wiki/Root-mean-square_deviation) (RMSE) 그리고 [mean absolute error metrics](https://en.wikipedia.org/wiki/Mean_absolute_error) 값으로 우버의 시계열 모니터링 시스템에 노출시켜 사용자들이 차트를 시간대별로 분석하고 알람 스레스홀드를 설정할 수 있다.
+
+![http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image8.png](http://1fykyq3mdn5r21tpna3wkdyi-wpengine.netdna-ssl.com/wp-content/uploads/2017/09/image8.png)
+
+예측값들은 샘플링되고 비교되어 관측값으로 나타내어져서 모델 정확도 지표를 생성하게된다.
+
+****Management plane, API, and web UI (관리 화면, API 와 UI)****
+
+마지막으로 중요한 시스템은  API 계층이다.  API 계층은 애플리케이션 관리를 해주는데, 웹 UI 와 네트워크 API 통합에 사용되어 우버의 시스템 모니터링과 알람 인프라에 통합되어있다. API 계층은 또한 워크플로 시스템을 통해 배치 데이타 파이프라인, 훈련 잡들, 배치 예측 잡들, 그리고 배치와 온라인 모델 컨테이너의 배포 오케스트레이션을 가능하게 해준다. 
+
+미켈란젤로 사용자는 각 컴포넌트들을 웹  UI, REST API, 모니터링과 알람 툴을 통해 상호작용한다.
